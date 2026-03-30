@@ -11,6 +11,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   token: string | null;
 }
@@ -32,9 +33,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         try {
-          // TODO: Add endpoint to fetch user profile
-          // const userProfile = await apiService.getUserProfile();
-          // setUser(userProfile);
+          const userProfile = await apiService.getUserProfile();
+          setUser(userProfile);
           setIsAuthenticated(true);
           setToken(storedToken);
         } catch (error) {
@@ -58,9 +58,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(response.token);
       setIsAuthenticated(true);
 
-      // TODO: Add endpoint to fetch user profile after login
-      // const userProfile = await apiService.getUserProfile();
-      // setUser(userProfile);
+      const userProfile = await apiService.getUserProfile();
+      setUser(userProfile);
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  const signup = useCallback(async (name: string, email: string, password: string) => {
+    try {
+      const response = await apiService.signup({ name, email, password });
+      
+      localStorage.setItem('token', response.token);
+      setToken(response.token);
+      setIsAuthenticated(true);
+
+      const userProfile = await apiService.getUserProfile();
+      setUser(userProfile);
     } catch (error) {
       throw error;
     }
@@ -87,6 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated,
     user,
     login,
+    signup,
     logout,
     token
   };

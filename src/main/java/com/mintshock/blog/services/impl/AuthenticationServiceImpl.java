@@ -14,6 +14,11 @@ import org.springframework.stereotype.Service;
 
 import com.mintshock.blog.services.AuthenticationService;
 
+import com.mintshock.blog.domain.entities.User;
+import com.mintshock.blog.repositories.UserRepository;
+import com.mintshock.blog.domain.dtos.SignupRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -25,6 +30,8 @@ import lombok.RequiredArgsConstructor;
 public class AuthenticationServiceImpl implements AuthenticationService{
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${jwt.secret}")
     private String secretKey;
@@ -36,6 +43,23 @@ public class AuthenticationServiceImpl implements AuthenticationService{
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
 
         return userDetailsService.loadUserByUsername(email);
+    }
+
+    @Override
+    public UserDetails signup(SignupRequest signupRequest) {
+        if (userRepository.findByEmail(signupRequest.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already in use");
+        }
+
+        User newUser = User.builder()
+                .name(signupRequest.getName())
+                .email(signupRequest.getEmail())
+                .password(passwordEncoder.encode(signupRequest.getPassword()))
+                .build();
+        
+        userRepository.save(newUser);
+
+        return userDetailsService.loadUserByUsername(signupRequest.getEmail());
     }
 
     @Override

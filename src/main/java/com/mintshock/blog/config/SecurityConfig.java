@@ -12,8 +12,11 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import com.mintshock.blog.domain.entities.User;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.Arrays;
+import java.util.List;
 import com.mintshock.blog.repositories.UserRepository;
 import com.mintshock.blog.security.BlogUserDetailsService;
 import com.mintshock.blog.security.JwtAuthenticationFilter;
@@ -31,16 +34,6 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService(UserRepository userRepository) {
         BlogUserDetailsService blogUserDetailsService = new BlogUserDetailsService(userRepository);
 
-        String email = "user@gmail.com";
-        userRepository.findByEmail(email).orElseGet(() -> {
-            User newUser = User.builder()
-                    .name("Test User")
-                    .email(email)
-                    .password(passwordEncoder().encode("123456"))
-                    .build();
-            return userRepository.save(newUser); 
-        });
-
         return blogUserDetailsService;
     }
 
@@ -50,6 +43,7 @@ public class SecurityConfig {
             JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/signup").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/posts/drafts").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/v1/posts/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
@@ -57,11 +51,24 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session ->
                     session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean

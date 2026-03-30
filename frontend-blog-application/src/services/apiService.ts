@@ -1,9 +1,20 @@
 import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig, AxiosError } from 'axios';
 
-// Types
 export interface LoginRequest {
   email: string;
   password: string;
+}
+
+export interface SignupRequest {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface UserDto {
+  id: string;
+  name: string;
+  email: string;
 }
 
 export interface AuthResponse {
@@ -126,6 +137,17 @@ class ApiService {
   public async login(credentials: LoginRequest): Promise<AuthResponse> {
     const response: AxiosResponse<AuthResponse> = await this.api.post('/auth/login', credentials);
     localStorage.setItem('token', response.data.token);
+    return response.data;
+  }
+
+  public async signup(data: SignupRequest): Promise<AuthResponse> {
+    const response: AxiosResponse<AuthResponse> = await this.api.post('/auth/signup', data);
+    localStorage.setItem('token', response.data.token);
+    return response.data;
+  }
+
+  public async getUserProfile(): Promise<UserDto> {
+    const response: AxiosResponse<UserDto> = await this.api.get('/auth/me');
     return response.data;
   }
 

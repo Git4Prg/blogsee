@@ -6,4 +6,5 @@ public interface AuthenticationService {
     UserDetails authenticate(String email, String password);
     String generateToken(UserDetails userDetails);
     UserDetails validateToken(String Token);
+    UserDetails signup(com.mintshock.blog.domain.dtos.SignupRequest signupRequest);
 }
